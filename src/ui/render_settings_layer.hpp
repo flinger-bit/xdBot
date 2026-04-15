@@ -5,25 +5,25 @@
 
 using namespace geode::prelude;
 
-class RenderSettingsLayer : public Popup<> , public TextInputDelegate {
+class RenderSettingsLayer : public Popup, public TextInputDelegate {
 protected:
-    bool setup() override {
+    bool init() {
+        if (!Popup::init(396.f, 277.f))
+            return false;
+
         this->setTitle("Render Settings");
+
         return true;
     }
 
 public:
     static RenderSettingsLayer* create() {
         auto ret = new RenderSettingsLayer();
-        if (ret && ret->initAnchored(396.f, 277.f)) {
+        if (ret && ret->init()) {
             ret->autorelease();
             return ret;
         }
-        CC_SAFE_DELETE(ret);
+        delete ret;
         return nullptr;
-    }
-
-    void onClose(CCObject*) {
-        this->onClose(nullptr);
     }
 };

@@ -2,9 +2,7 @@
   "geode": "5.6.1",
   "gd": {
     "android": "2.2081",
-    "win": "2.2081",
-    "mac": "2.2081",
-    "ios": "2.2081"
+    "win": "2.2081"
   },
   "id": "zilko.xdbot",
   "name": "xdBot Remastered",

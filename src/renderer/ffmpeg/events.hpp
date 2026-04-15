@@ -1,45 +1,59 @@
 #pragma once
 
-#include <Geode/Geode.hpp>
-#include <Geode/loader/Event.hpp>
 #include "render_settings.hpp"
 
-#include <cstdint>
 #include <filesystem>
 #include <functional>
 #include <utility>
 #include <vector>
 
-using namespace geode::prelude;
-
 namespace ffmpeg::events {
 namespace impl {
 
-#define DEFAULT_RESULT_ERROR geode::Err("Event was not handled")
+struct Dummy {};
 
-class CreateRecorderEvent : public Event {
+class CreateRecorderEvent {
 public:
-    CreateRecorderEvent() : m_ptr(nullptr) {}
+    CreateRecorderEvent() = default;
+
+    void post() {
+        if (m_ptr == nullptr) {
+            m_ptr = new Dummy();
+        }
+    }
+
     void setPtr(void* ptr) { m_ptr = ptr; }
     void* getPtr() const { return m_ptr; }
 
 private:
-    void* m_ptr;
+    void* m_ptr = nullptr;
 };
 
-class DeleteRecorderEvent : public Event {
+class DeleteRecorderEvent {
 public:
     explicit DeleteRecorderEvent(void* ptr) : m_ptr(ptr) {}
+
+    void post() {
+        if (m_ptr != nullptr) {
+            delete static_cast<Dummy*>(m_ptr);
+            m_ptr = nullptr;
+        }
+    }
+
     void* getPtr() const { return m_ptr; }
 
 private:
-    void* m_ptr;
+    void* m_ptr = nullptr;
 };
 
-class InitRecorderEvent : public Event {
+class InitRecorderEvent {
 public:
     InitRecorderEvent(void* ptr, RenderSettings const* settings)
-        : m_ptr(ptr), m_renderSettings(settings) {}
+      : m_ptr(ptr), m_renderSettings(settings) {}
+
+    void post() {
+        m_result = geode::Err("Recorder backend is not implemented in this build.");
+    }
 
     void setResult(geode::Result<>&& result) { m_result = std::move(result); }
     geode::Result<> getResult() { return m_result; }
@@ -50,25 +64,34 @@ public:
 private:
     RenderSettings const* m_renderSettings = nullptr;
     void* m_ptr = nullptr;
-    geode::Result<> m_result = DEFAULT_RESULT_ERROR;
+    geode::Result<> m_result = geode::Err("Event was not handled");
 };
 
-class StopRecorderEvent : public Event {
+class StopRecorderEvent {
 public:
     explicit StopRecorderEvent(void* ptr) : m_ptr(ptr) {}
+
+    void post() {}
+
     void* getPtr() const { return m_ptr; }
 
 private:
-    void* m_ptr;
+    void* m_ptr = nullptr;
 };
 
-struct Dummy {};
-
-class GetWriteFrameFunctionEvent : public Event {
+class GetWriteFrameFunctionEvent {
 public:
+    struct DummyRecorder {
+        geode::Result<> writeFrame(std::vector<std::uint8_t> const&) { return geode::Err("Not implemented"); }
+    };
+
     using writeFrame_t = geode::Result<>(Dummy::*)(std::vector<std::uint8_t> const&);
 
     GetWriteFrameFunctionEvent() = default;
+
+    void post() {
+        m_function = nullptr;
+    }
 
     void setFunction(writeFrame_t function) { m_function = function; }
     writeFrame_t getFunction() const { return m_function; }
@@ -77,9 +100,13 @@ private:
     writeFrame_t m_function = nullptr;
 };
 
-class CodecRecorderEvent : public Event {
+class CodecRecorderEvent {
 public:
     CodecRecorderEvent() = default;
+
+    void post() {
+        m_codecs.clear();
+    }
 
     void setCodecs(std::vector<std::string>&& codecs) { m_codecs = std::move(codecs); }
     std::vector<std::string> const& getCodecs() const { return m_codecs; }
@@ -88,7 +115,7 @@ private:
     std::vector<std::string> m_codecs;
 };
 
-class MixVideoAudioEvent : public Event {
+class MixVideoAudioEvent {
 public:
     MixVideoAudioEvent(
         std::filesystem::path const& videoFile,
@@ -98,6 +125,10 @@ public:
         m_videoFile = &videoFile;
         m_audioFile = &audioFile;
         m_outputMp4File = &outputMp4File;
+    }
+
+    void post() {
+        m_result = geode::Err("FFmpeg muxing is not implemented in this build.");
     }
 
     void setResult(geode::Result<>&& result) { m_result = std::move(result); }
@@ -111,10 +142,10 @@ private:
     std::filesystem::path const* m_videoFile = nullptr;
     std::filesystem::path const* m_audioFile = nullptr;
     std::filesystem::path const* m_outputMp4File = nullptr;
-    geode::Result<> m_result = DEFAULT_RESULT_ERROR;
+    geode::Result<> m_result = geode::Err("Event was not handled");
 };
 
-class MixVideoRawEvent : public Event {
+class MixVideoRawEvent {
 public:
     MixVideoRawEvent(
         std::filesystem::path const& videoFile,
@@ -124,6 +155,10 @@ public:
         m_videoFile = &videoFile;
         m_raw = &raw;
         m_outputMp4File = &outputMp4File;
+    }
+
+    void post() {
+        m_result = geode::Err("FFmpeg muxing is not implemented in this build.");
     }
 
     void setResult(geode::Result<>&& result) { m_result = std::move(result); }
@@ -137,10 +172,9 @@ private:
     std::filesystem::path const* m_videoFile = nullptr;
     std::vector<float> const* m_raw = nullptr;
     std::filesystem::path const* m_outputMp4File = nullptr;
-    geode::Result<> m_result = DEFAULT_RESULT_ERROR;
+    geode::Result<> m_result = geode::Err("Event was not handled");
 };
 
-#undef DEFAULT_RESULT_ERROR
 } // namespace impl
 
 class Recorder {
@@ -158,9 +192,7 @@ public:
         }
     }
 
-    bool isValid() const {
-        return m_ptr != nullptr;
-    }
+    bool isValid() const { return m_ptr != nullptr; }
 
     geode::Result<> init(RenderSettings const& settings) {
         impl::InitRecorderEvent initEvent(m_ptr, &settings);

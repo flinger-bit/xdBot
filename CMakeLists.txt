@@ -1,42 +1,14 @@
 cmake_minimum_required(VERSION 3.21)
-project(xdBotRemastered VERSION 3.0.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 
-add_library(${PROJECT_NAME} SHARED
-    src/main.cpp
-    src/global.cpp
-    src/macro.cpp
-    src/keybinds.cpp
-    src/utils/utils.cpp
-    src/gdr/gdr.cpp
-    src/renderer/renderer.cpp
+project(xdBotRemastered VERSION 3.0.0)
 
-    src/hacks/other.cpp
-    src/hacks/tps_bypass.cpp
-    src/hacks/frame_stepper.cpp
-    src/hacks/layout_mode.cpp
-    src/hacks/show_trajectory.cpp
-    src/hacks/coin_finder.cpp
-    src/hacks/clickbot.cpp
-    src/hacks/autoclicker.cpp
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cpp)
 
-    src/ui/macro_editor.cpp
-    src/ui/button_edit_layer.cpp
-    src/ui/game_ui.cpp
-    src/ui/record_layer.cpp
-    src/ui/render_settings_layer.cpp
-    src/ui/load_macro_layer.cpp
-    src/ui/clickbot_layer.cpp
-    src/ui/button_setting.cpp
-
-    src/practice_fixes/input.cpp
-    src/practice_fixes/player.cpp
-    src/practice_fixes/play_layer.cpp
-)
+add_library(${PROJECT_NAME} SHARED ${SOURCES})
 
 if (NOT DEFINED ENV{GEODE_SDK})
     message(FATAL_ERROR "Unable to find Geode SDK! Please define GEODE_SDK environment variable to point to Geode")

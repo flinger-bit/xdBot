@@ -1,48 +1,29 @@
 #pragma once
 
-#include "../includes.hpp"
+#include <Geode/ui/Popup.hpp>
+#include <Geode/ui/TextInput.hpp>
 
-class RenderSettingsLayer : public geode::Popup<>, public TextInputDelegate {
-	
-public:
+using namespace geode::prelude;
 
-	Slider* sfxSlider = nullptr;
-	Slider* musicSlider = nullptr;
-	TextInput* fadeInInput = nullptr;
-	TextInput* fadeOutInput = nullptr;
-	TextInput* extensionInput = nullptr;
-
-	CCTextInputNode* argsInput = nullptr;
-	CCTextInputNode* audioArgsInput = nullptr;
-	CCTextInputNode* secondsInput = nullptr;
-	CCTextInputNode* videoArgsInput = nullptr;
-
-	CCMenuItemToggler* onlySongToggle = nullptr;
-	CCMenuItemToggler* recordAudioToggle = nullptr;
-
-	Mod* mod = nullptr;
-
-private:
-
-	bool setup() override;
+class RenderSettingsLayer : public Popup<> , public TextInputDelegate {
+protected:
+    bool setup() override {
+        this->setTitle("Render Settings");
+        return true;
+    }
 
 public:
+    static RenderSettingsLayer* create() {
+        auto ret = new RenderSettingsLayer();
+        if (ret && ret->initAnchored(396.f, 277.f)) {
+            ret->autorelease();
+            return ret;
+        }
+        CC_SAFE_DELETE(ret);
+        return nullptr;
+    }
 
-	STATIC_CREATE(RenderSettingsLayer, 396, 277)
-	
-	void open(CCObject*) {
-		create()->show();
-	}
-
-	void close(CCObject*) {
-		keyBackClicked();
-	}
-
-	void textChanged(CCTextInputNode* node) override;
-
-	void onSlider(CCObject*);
-
-	void onDefaults(CCObject*);
-
-	void showInfoPopup(CCObject*);
+    void onClose(CCObject*) {
+        this->onClose(nullptr);
+    }
 };
